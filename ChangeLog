@@ -1,3 +1,4 @@
+	* add a multi-threaded, pread()-based, disk I/O backend (pread_disk_io)
 	* optimize resume data format to use less space
 	* add a simpler overload to bencode() returning a vector<char>
 	* introduced a new API for creating torrents, enabling file_storage optimizations
