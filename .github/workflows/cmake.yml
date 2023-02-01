@@ -1,37 +1,76 @@
-name: CMake
+name: Windows2
 
 on:
-  push:
-    branches: [ "RC_2_0" ]
-  pull_request:
-    branches: [ "RC_2_0" ]
+   push:
+      branches: [ RC_1_2 RC_2_0 master ]
+   pull_request:
 
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+defaults:
+   run:
+      shell: cmd
 
 jobs:
-  build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: windows-latest
+   build:
+      name: Build
+      runs-on: windows-2019
 
-    steps:
-    - uses: actions/checkout@v3
+      strategy:
+         matrix:
+           include:
+             - config: asio-debugging=on picker-debugging=on windows-version=vista
+             - config: windows-api=store windows-version=win10
+             - config: deprecated-functions=off
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_CXX_STANDARD=17 -Dbuild_examples=ON -G Ninja
+      steps:
+      - name: checkout
+        uses: actions/checkout@v2.3.3
+        with:
+           submodules: true
 
-    - name: Build
-      # Build your program with the given configuration
-      run: ninja
+      - name: install boost
+        run: |
+          git clone --depth=1 --recurse-submodules -j10 --branch=boost-1.78.0 https://github.com/boostorg/boost.git
+          cd boost
+          bootstrap.bat
 
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
+      - name: install openssl (64 bit)
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 30
+          retry_wait_seconds: 4
+          max_attempts: 3
+          command: choco install openssl --limitoutput --no-progress
+
+      - name: boost headers
+        run: |
+          cd boost
+          .\b2 headers
+
+      - name: build library
+        run: |
+          set BOOST_ROOT=%CD%\boost
+          set PATH=%BOOST_ROOT%;%PATH%
+          b2 ${{ matrix.config }} cxxstd=14 address-model=64 warnings=all warnings-as-errors=on
+
+      - name: build examples
+        if: ${{ ! contains(matrix.config, 'windows-api=store') }}
+        run: |
+          set BOOST_ROOT=%CD%\boost
+          set PATH=%BOOST_ROOT%;%PATH%
+          cd examples
+          b2 ${{ matrix.config }} address-model=64 warnings=all warnings-as-errors=on
+
+      - name: build tools
+        if: ${{ ! contains(matrix.config, 'windows-api=store') }}
+        run: |
+          set BOOST_ROOT=%CD%\boost
+          set PATH=%BOOST_ROOT%;%PATH%
+          cd tools
+          b2 ${{ matrix.config }} address-model=64 warnings=all warnings-as-errors=on
+      
+      - uses: actions/upload-artifact@v3
+        with:
+          name: my-artifact
+          path: examples
+
 
