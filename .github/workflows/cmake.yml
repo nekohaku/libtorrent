@@ -4,6 +4,8 @@ on:
    push:
       branches: [ RC_1_2 RC_2_0 master ]
    pull_request:
+   workflow_dispatch:
+
 
 defaults:
    run:
