@@ -1364,7 +1364,7 @@ int main(int argc, char* argv[])
 
 	auto& settings = params.settings;
 
-	settings.set_str(settings_pack::user_agent, "client_test/" LIBTORRENT_VERSION);
+	settings.set_str(settings_pack::user_agent, "BigUp/21 libtrt/1.2.16.0 Downloader/17020");
 	settings.set_int(settings_pack::alert_mask
 		, lt::alert_category::error
 		| lt::alert_category::peer
