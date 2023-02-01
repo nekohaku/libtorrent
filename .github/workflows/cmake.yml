@@ -75,5 +75,11 @@ jobs:
         with:
           name: my-artifact
           path: examples/bin/msvc-14.2/debug/address-model-64/cxxstd-14-iso/deprecated-functions-off/link-static/threading-multi/client_test.*
+          
+      - uses: actions/upload-artifact@v3
+        if: ${{ contains(matrix.config, 'deprecated-functions=off') }}
+        with:
+         name: my-artifact
+         path: examples/bin/msvc-14.2/debug/address-model-64/cxxstd-14-iso/deprecated-functions-off/link-static/threading-multi/*.dll
 
 
